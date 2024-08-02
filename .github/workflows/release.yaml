@@ -37,11 +37,11 @@ jobs:
 
       - name: Compress binaries (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: zip -r release/azmsgctl-linux.zip out/*
+        run: zip -r release/azmsgctl-linux-x64.zip out/*
 
       - name: Compress binaries (Windows)
         if: matrix.os == 'windows-latest'
-        run: powershell.exe Compress-Archive -Path out\* -DestinationPath release/azmsgctl-windows.zip
+        run: powershell.exe Compress-Archive -Path out\* -DestinationPath release/azmsgctl-win-x64.zip
 
       - name: Upload artifact
         uses: actions/upload-artifact@v2
@@ -82,8 +82,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/azmsgctl-linux.zip
-          asset_name: azmsgctl-linux.zip
+          asset_path: ./release/azmsgctl-linux-x64.zip
+          asset_name: azmsgctl-linux-x64.zip
           asset_content_type: application/zip
 
       - name: Upload Release Asset (Windows)
@@ -92,6 +92,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./release/azmsgctl-windows.zip
-          asset_name: azmsgctl-windows.zip
+          asset_path: ./release/azmsgctl-win-x64.zip
+          asset_name: azmsgctl-win-x64.zip
           asset_content_type: application/zip
