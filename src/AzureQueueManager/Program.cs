@@ -1,7 +1,10 @@
-﻿using CliFx;
+﻿using AzureQueueManager.Commands;
+using CliFx;
 
 await new CliApplicationBuilder()
-            .AddCommandsFromThisAssembly()
+            .AddCommand<ResendDeadLetter>()
+            .AddCommand<DeleteDeadLetter>()
+            .AddCommand<CancelScheduled>()
             .SetExecutableName("azmsgctl")
             .Build()
             .RunAsync();
