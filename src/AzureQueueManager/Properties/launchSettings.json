@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "AzureQueueManager": {
+      "commandName": "Project",
+      "commandLineArgs": "scheduled cancel -e credit-commercial-service-commands",
+      "environmentVariables": {
+        "SB_CONNSTR": "Endpoint=sb://sb-credit-eastus2-staging.servicebus.windows.net/;SharedAccessKeyName=SB-CREDIT-EASTUS2-STAGING;SharedAccessKey=Z6L5NbgcSqffIIuntgVKh9Njm2TP3mH1ko1V8WnPNps="
+      }
+    }
+  }
+}
