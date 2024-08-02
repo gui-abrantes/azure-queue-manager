@@ -43,15 +43,31 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: powershell.exe Compress-Archive -Path out\* -DestinationPath release/azmsgctl-windows.zip
 
-      - name: Verify compressed files
-        run: |
-          ls -l release
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: release-artifacts
+          path: release/*
+
+  create_release:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: release-artifacts
+          path: ./release
 
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
@@ -61,23 +77,21 @@ jobs:
           prerelease: false
 
       - name: Upload Release Asset (Linux)
-        if: matrix.os == 'ubuntu-latest'
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release/azmsgctl-linux.zip
+          asset_path: ./release/azmsgctl-linux.zip
           asset_name: azmsgctl-linux.zip
           asset_content_type: application/zip
 
       - name: Upload Release Asset (Windows)
-        if: matrix.os == 'windows-latest'
         uses: actions/upload-release-asset@v1
         env:
-          GITHUB_TOKEN: ${{ secrets.REPO_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: release/azmsgctl-windows.zip
+          asset_path: ./release/azmsgctl-windows.zip
           asset_name: azmsgctl-windows.zip
           asset_content_type: application/zip
