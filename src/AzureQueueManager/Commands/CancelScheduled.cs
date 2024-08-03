@@ -1,26 +1,25 @@
-﻿using CliFx.Attributes;
+﻿using AzureQueueManager.Services;
+using CliFx.Attributes;
 using CliFx.Infrastructure;
 
 namespace AzureQueueManager.Commands
 {
     [Command("scheduled cancel", Description = "Cancel scheduled messages")]
-    public class CancelScheduled : BaseManagerCommand
+    public class CancelScheduled (ServiceBus client) : IBaseOptions
     {
-        public override async ValueTask ExecuteAsync(IConsole console)
+        public async ValueTask ExecuteAsync(IConsole console)
         {
             var totalCanceled = 0;
 
-            StartClient();
+            client.StartClient();
 
-            var receiver = BuildMessageReceiver();
-
-            var messageList = await receiver.PeekAsync(MessageCount);
+            var messageList = await client.PeekAsync();
 
             while (messageList?.Count > 0)
             {
                 var cancelTasks = messageList.Select(async message =>
                 {
-                    await CancelScheduledMessage(message);
+                    await client.CancelScheduledMessage(message);
 
                     console.Output.WriteLine($"MessageId: {message.MessageId} canceled");
 
@@ -29,10 +28,10 @@ namespace AzureQueueManager.Commands
 
                 await Task.WhenAll(cancelTasks);
 
-                messageList = await receiver.PeekAsync(MessageCount);
+                messageList = await client.PeekAsync();
             }
 
-            await CloseClient();
+            await client.CloseClient();
 
             console.Output.WriteLine($"{totalCanceled} scheduled messages canceled");
         }

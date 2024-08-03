@@ -1,12 +1,13 @@
-﻿using CliFx.Attributes;
+﻿using AzureQueueManager.Services;
+using CliFx.Attributes;
 using CliFx.Infrastructure;
 
 namespace AzureQueueManager.Commands
 {
     [Command("deadletter resend", Description = "Resend dead letter messages")]
-    public class ResendDeadLetter : BaseManagerCommand
+    public class ResendDeadLetter (ServiceBus client) : IBaseOptions
     {
-        public override async ValueTask ExecuteAsync(IConsole console)
+        public async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
@@ -17,17 +18,15 @@ namespace AzureQueueManager.Commands
         {
             var totalProcessed = 0;
 
-            StartClient();
+            client.StartClient(true);
 
-            var receiver = BuildMessageReceiver(true);
-
-            var messageList = await receiver.ReceiveAsync(MessageCount, TimeSpan.FromSeconds(Timeout));
+            var messageList = await client.ReceiveAsync();
 
             while (messageList?.Count > 0)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    await AbandonMessages(messageList, receiver);
+                    await client.AbandonMessages(messageList);
 
                     break;
                 }
@@ -36,9 +35,9 @@ namespace AzureQueueManager.Commands
                 {
                     var cloneMessage = message.Clone();
 
-                    await SendMessage(cloneMessage);
+                    await client.SendMessage(cloneMessage);
 
-                    await receiver.CompleteAsync(message.SystemProperties.LockToken);
+                    await client.CompleteAsync(message.SystemProperties.LockToken);
 
                     console.Output.WriteLine($"MessageId: {message.MessageId} resended");
 
@@ -47,10 +46,10 @@ namespace AzureQueueManager.Commands
 
                 await Task.WhenAll(processTasks);
 
-                messageList = await receiver.ReceiveAsync(MessageCount, TimeSpan.FromSeconds(Timeout));
+                messageList = await client.ReceiveAsync();
             }
 
-            await CloseClient();
+            await client.CloseClient();
 
             console.Output.WriteLine($"{totalProcessed} messages resended");
         }

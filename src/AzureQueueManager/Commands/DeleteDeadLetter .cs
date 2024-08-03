@@ -1,12 +1,13 @@
-﻿using CliFx.Attributes;
+﻿using AzureQueueManager.Services;
+using CliFx.Attributes;
 using CliFx.Infrastructure;
 
 namespace AzureQueueManager.Commands
 {
     [Command("deadletter delete", Description = "Delete dead letter messages")]
-    public class DeleteDeadLetter : BaseManagerCommand
+    public class DeleteDeadLetter (ServiceBus client) : IBaseOptions
     {
-        public override async ValueTask ExecuteAsync(IConsole console)
+        public async ValueTask ExecuteAsync(IConsole console)
         {
             var cancellationToken = console.RegisterCancellationHandler();
 
@@ -17,24 +18,22 @@ namespace AzureQueueManager.Commands
         {
             var totalDeleted = 0;
 
-            StartClient();
+            client.StartClient(true);
 
-            var receiver = BuildMessageReceiver(true);
-
-            var messageList = await receiver.ReceiveAsync(MessageCount, TimeSpan.FromSeconds(Timeout));
+            var messageList = await client.ReceiveAsync();
 
             while (messageList?.Count > 0)
             {
                 if (cancellationToken.IsCancellationRequested)
                 {
-                    await AbandonMessages(messageList, receiver);
+                    await client.AbandonMessages(messageList);
 
                     break;
                 }
 
                 var deleteTasks = messageList.Select(async message =>
                 {
-                    await receiver.CompleteAsync(message.SystemProperties.LockToken);
+                    await client.CompleteAsync(message.SystemProperties.LockToken);
 
                     console.Output.WriteLine($"MessageId: {message.MessageId} deleted");
 
@@ -43,10 +42,10 @@ namespace AzureQueueManager.Commands
 
                 await Task.WhenAll(deleteTasks);
 
-                messageList = await receiver.ReceiveAsync(MessageCount, TimeSpan.FromSeconds(Timeout));
+                messageList = await client.ReceiveAsync();
             }
 
-            await CloseClient();
+            await client.CloseClient();
 
             console.Output.WriteLine($"{totalDeleted} messages deleted");
         }
